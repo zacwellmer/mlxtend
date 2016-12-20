@@ -38,7 +38,11 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
             min and max that scored highest in cross-validtion. For example,
             the tuple (1, 4) will return any combination from
             1 up to 4 features instead of a fixed number of features k.
-    score_threshold : float where if k_score exceeds score threshold stop.
+    score_threshold : float where
+        if k_score exceeds score threshold stop.
+    early_stop_threshold : float (default: None)
+        if the change in score after an iteration of sfs does not exceed
+        threshold then return the best feature set encountered thus far.
     forward : bool (default: True)
         Forward selection if True,
         backward selection otherwise
@@ -104,7 +108,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
 
     """
     def __init__(self, estimator, k_features=1, score_threshold=float('-inf'),
-                 forward=True, floating=False,
+                 early_stop_threshold=None, forward=True, floating=False,
                  verbose=1, scoring=None,
                  cv=5, skip_if_stuck=True, n_jobs=1,
                  pre_dispatch='2*n_jobs',
@@ -113,6 +117,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
         self.estimator = estimator
         self.k_features = k_features
         self.score_threshold = score_threshold
+        self.early_stop_threshold = early_stop_threshold
         self.forward = forward
         self.floating = floating
         self.pre_dispatch = pre_dispatch
@@ -284,6 +289,14 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
 
                 if self._TESTING_INTERRUPT_MODE:
                     raise KeyboardInterrupt
+
+                if self.early_stop_threshold:
+                    #check if no longer making improvements
+                    max_score_delta = k_score - max_score
+                    if max_score_delta > 0:
+                        max_score = k_score
+                    if max_score_delta < self.early_stop_threshold:
+                        break
 
         except KeyboardInterrupt as e:
             self.interrupted_ = True
