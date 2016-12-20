@@ -38,6 +38,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
             min and max that scored highest in cross-validtion. For example,
             the tuple (1, 4) will return any combination from
             1 up to 4 features instead of a fixed number of features k.
+    score_threshold : float where if k_score exceeds score threshold stop.
     forward : bool (default: True)
         Forward selection if True,
         backward selection otherwise
@@ -102,7 +103,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
               'avg_score' (average cross-validation score)
 
     """
-    def __init__(self, estimator, k_features=1,
+    def __init__(self, estimator, k_features=1, score_threshold=float('-inf'),
                  forward=True, floating=False,
                  verbose=1, scoring=None,
                  cv=5, skip_if_stuck=True, n_jobs=1,
@@ -111,6 +112,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
 
         self.estimator = estimator
         self.k_features = k_features
+        self.score_threshold = score_threshold
         self.forward = forward
         self.floating = floating
         self.pre_dispatch = pre_dispatch
@@ -215,7 +217,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
         best_subset = None
         k_score = 0
         try:
-            while k != k_to_select:
+            while k != k_to_select and k_score < self.score_threshold:
                 prev_subset = set(k_idx)
                 if self.forward:
                     k_idx, k_score, cv_scores = self._inclusion(
@@ -254,7 +256,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
 
                 k = len(k_idx)
                 # floating can lead to multiple same-sized subsets
-                if k not in self.subsets_ or (self.subsets_[k]['avg_score'] >
+                if k not in self.subsets_ or (self.subsets_[k]['avg_score'] <
                                               k_score):
                     self.subsets_[k] = {
                         'feature_idx': k_idx,
