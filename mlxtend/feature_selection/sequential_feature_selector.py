@@ -107,7 +107,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
               'avg_score' (average cross-validation score)
 
     """
-    def __init__(self, estimator, k_features=1, score_threshold=float('-inf'),
+    def __init__(self, estimator, k_features=1, score_threshold=float('inf'),
                  early_stop_threshold=None, forward=True, floating=False,
                  verbose=1, scoring=None,
                  cv=5, skip_if_stuck=True, n_jobs=1,
@@ -221,6 +221,7 @@ class SequentialFeatureSelector(BaseEstimator, MetaEstimatorMixin):
 
         best_subset = None
         k_score = 0
+        max_score = float('-inf')
         try:
             while k != k_to_select and k_score < self.score_threshold:
                 prev_subset = set(k_idx)
